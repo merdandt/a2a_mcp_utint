@@ -1,6 +1,6 @@
 from typing import Callable
 import uuid
-from common.types import (
+from a2a_servers.common.types import (
     AgentCard,
     Task,
     TaskSendParams,
@@ -9,7 +9,7 @@ from common.types import (
     TaskStatus,
     TaskState,
 )
-from common.client import A2AClient
+from a2a_servers.common.client import A2AClient
 
 TaskCallbackArg = Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent
 TaskUpdateCallback = Callable[[TaskCallbackArg, AgentCard], Task]
@@ -91,4 +91,3 @@ def merge_metadata(target, source):
     target.metadata.update(source.metadata)
   elif source.metadata:
     target.metadata = dict(**source.metadata)
-

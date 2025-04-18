@@ -12,7 +12,7 @@ from common.types import Message, TextPart, AgentCard # Import AgentCard if need
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-SERVER_URL = "http://localhost:10000/google_search_agent" # URL from Echo Server's AgentCard
+SERVER_URL = "http://localhost:12000/host_agent" # URL from Echo Server's AgentCard
 
 async def main():
     # In a real scenario, you might fetch the AgentCard first
@@ -28,7 +28,7 @@ async def main():
 
     task_id = f"echo-task-{uuid4().hex}"
     session_id = f"session-{uuid4().hex}"
-    user_text = "What are the traditional sports of aosta valley? Please write a long paragraph explaining how they work for each of them"  # Example user input
+    user_text = input("Enter your query: ")  # Example user input
 
     # Construct the user message
     user_message = Message(

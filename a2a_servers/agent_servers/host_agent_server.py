@@ -12,19 +12,24 @@ from adk_agents_testing.mcp_tools.mcp_tool_stocks import return_sse_mcp_tools_st
 load_dotenv(find_dotenv())
 
 async def run_agent():
-    AGENT_NAME = "stock_report_agent"
-    AGENT_DESCRIPTION = "An agent that provides US stock prices and info."
-    PORT = 10000
+    AGENT_NAME = "host_agent"
+    AGENT_DESCRIPTION = "An agent orchestrates the decomposition of the user request into tasks that can be performed by the child agents."
+    PORT = 12000
     HOST = "0.0.0.0"
     AGENT_URL = f"http://{HOST}:{PORT}"
     AGENT_VERSION = "1.0.0"
     MODEL = 'gemini-2.5-pro-exp-03-25'
     AGENT_SKILLS = [
         AgentSkill(
-            id="SKILL_STOCK_REPORT",
-            name="stock_report",
-            description="Provides stock prices and info.",
+            id="COORDINATE_AGENT_TASKS",
+            name="coordinate_tasks",
+            description="coordinate tasks between agents.",
         ),
+    ]
+
+    list_urls = [
+        "http://localhost:11000/google_search_agent",
+        "http://localhost:10000/stock_agent",
     ]
 
     AGENT_CARD = generate_agent_card(
@@ -40,28 +45,23 @@ async def run_agent():
         skills=AGENT_SKILLS,
     )
 
-    stocks_tools, stocks_exit_stack = await return_sse_mcp_tools_stocks()
-
-    stock_analysis_agent = ADKAgent(
+    host_agent = ADKAgent(
         model=MODEL,
-        name="stock_analysis_agent",
-        description="Handles stock analysis and provides insights, in particular, can get the latest stock price.",
-        tools=stocks_tools,
-        instructions=(
-            "Analyze stock data and provide insights. You can also get the latest stock price."
-            "If the user asks about a company, the stock prices for the said company."
-            "If the user asks about a stock, provide the latest stock price and any other relevant information."
-            "You can get only the latest stock price for US companies."
-        ),
+        name="host_agent",
+        description="",
+        tools=[],
+        instructions="",
+        is_host_agent=True,
+        remote_agent_addresses=list_urls,
     )
 
     task_manager = generate_agent_task_manager(
-        agent=stock_analysis_agent,
+        agent=host_agent,
     )
     server = A2AServer(
         host=HOST,
         port=PORT,
-        endpoint="/stock_agent",
+        endpoint="/host_agent",
         agent_card=AGENT_CARD,
         task_manager=task_manager
     )
