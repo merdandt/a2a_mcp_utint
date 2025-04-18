@@ -10,13 +10,13 @@ async def return_mcp_tools_stocks():
             command="/opt/homebrew/bin/uv",
             args=[
                 "--directory",
-                "/Users/tsadoq/gits/a_new_era_of_agents/mcp_server",
+                "/Users/tsadoq/gits/a2a-mcp-tutorial/mcp_server",
                 "run",
                 "stocks_server.py"
             ],
             env={
                 "MCP_PORT":"8001",
-                "PYTHONPATH": "/Users/tsadoq/gits/a_new_era_of_agents:${PYTHONPATH}"
+                "PYTHONPATH": "/Users/tsadoq/gits/a2a-mcp-tutorial:${PYTHONPATH}"
             },
         )
     )

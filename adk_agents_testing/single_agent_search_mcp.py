@@ -20,12 +20,12 @@ async def get_tools_async():
           command="/opt/homebrew/bin/uv",
           args=[
               "--directory",
-              "/Users/tsadoq/gits/a_new_era_of_agents/mcp_server",
+              "/Users/tsadoq/gits/a2a-mcp-tutorial/mcp_server",
               "run",
               "search_server.py"
           ],
           env={
-              "PYTHONPATH": "/Users/tsadoq/gits/a_new_era_of_agents:${PYTHONPATH}"
+              "PYTHONPATH": "/Users/tsadoq/gits/a2a-mcp-tutorial:${PYTHONPATH}"
           },
       )
   )
