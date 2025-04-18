@@ -17,7 +17,7 @@ from a2a_servers.common.types import (
     A2AClientHTTPError,
     A2AClientJSONError,
     SendTaskStreamingRequest,
-    SendTaskStreamingResponse,
+    SendTaskStreamingResponse, TaskSendParams,
 )
 import json
 
@@ -32,6 +32,7 @@ class A2AClient:
             raise ValueError("Must provide either agent_card or url")
 
     async def send_task(self, payload: dict[str, Any]) -> SendTaskResponse:
+        payload = TaskSendParams(**payload)
         request = SendTaskRequest(params=payload)
         return SendTaskResponse(**await self._send_request(request))
 
@@ -55,6 +56,7 @@ class A2AClient:
         async with httpx.AsyncClient() as client:
             try:
                 # Image generation could take time, adding timeout
+                print(f" -----> {self.url}")
                 response = await client.post(
                     self.url, json=request.model_dump(), timeout=600
                 )

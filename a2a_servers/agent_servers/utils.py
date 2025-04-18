@@ -9,7 +9,7 @@ def generate_agent_card(
         agent_description: str,
         agent_url: str,
         agent_version: str,
-        can_stream: bool = True,
+        can_stream: bool = False,
         can_push_notifications: bool = False,
         can_state_transition_history: bool = True,
         authentication: str = None,

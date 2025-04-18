@@ -18,7 +18,7 @@ async def run_agent():
     HOST = "0.0.0.0"
     AGENT_URL = f"http://{HOST}:{PORT}"
     AGENT_VERSION = "1.0.0"
-    MODEL = 'gemini-2.5-pro-exp-03-25'
+    MODEL = 'gemini-2.5-pro-preview-03-25'
     AGENT_SKILLS = [
         AgentSkill(
             id="COORDINATE_AGENT_TASKS",
@@ -37,7 +37,7 @@ async def run_agent():
         agent_description=AGENT_DESCRIPTION,
         agent_url=AGENT_URL,
         agent_version=AGENT_VERSION,
-        can_stream=True,
+        can_stream=False,
         can_push_notifications=False,
         can_state_transition_history=True,
         default_input_modes=["text"],

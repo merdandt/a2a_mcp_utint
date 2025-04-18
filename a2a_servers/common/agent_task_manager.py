@@ -1,3 +1,4 @@
+import traceback
 from typing import Any, AsyncGenerator, Union
 
 from a2a_servers.common.server import utils
@@ -92,7 +93,7 @@ class AgentTaskManager(InMemoryTaskManager):
             )
     def _validate_request(
         self, request: Union[SendTaskRequest, SendTaskStreamingRequest]
-    ) -> None:
+    ):
         task_send_params: TaskSendParams = request.params
         if not utils.are_modalities_compatible(
             task_send_params.acceptedOutputModes, self.agent.SUPPORTED_CONTENT_TYPES
@@ -130,7 +131,6 @@ class AgentTaskManager(InMemoryTaskManager):
 
     async def _invoke(self, request: SendTaskRequest) -> SendTaskResponse:
         task_send_params: TaskSendParams = request.params
-        print(task_send_params)
         query = self._get_user_query(task_send_params)
         try:
             result = await self.agent.invoke(query, task_send_params.sessionId)

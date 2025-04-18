@@ -35,6 +35,7 @@ class ADKAgent:
             tools: List[Any],
             is_host_agent: bool = False,
             remote_agent_addresses: List[str] = None,
+            task_callback: TaskUpdateCallback | None = None
     ):
         """
         Initializes the ADK agent with the given parameters.
@@ -45,11 +46,14 @@ class ADKAgent:
         :param tools: The tools the agent can use.
         :param remote_agent_addresses: The addresses of the remote agents.
         """
+        self.task_callback = task_callback
         if is_host_agent:
             self.remote_agent_connections: dict[str, RemoteAgentConnections] = {}
             self.cards: dict[str, AgentCard] = {}
             for address in remote_agent_addresses:
+                print(f'loading remote agent {address}')
                 card_resolver = A2ACardResolver(address)
+                print(f'loaded card resolver for {card_resolver.base_url}')
                 card = card_resolver.get_agent_card()
                 remote_connection = RemoteAgentConnections(card)
                 self.remote_agent_connections[card.name] = remote_connection
@@ -63,10 +67,7 @@ class ADKAgent:
                 self.send_task,
             ]
             instructions = self.root_instruction()
-            description = (
-                "This agent orchestrates the decomposition of the user request into"
-                " tasks that can be performed by the child agents."
-            ),
+            description = "This agent orchestrates the decomposition of the user request into tasks that can be performed by the child agents."
 
         self._agent = self._build_agent(
             model=model,
@@ -284,7 +285,7 @@ Agents:
             taskId = state['task_id']
         else:
             taskId = str(uuid.uuid4())
-        sessionId = state['session_id']
+        sessionId = state.get('session_id', "UKN"+str(uuid.uuid4()))
         task: Task
         messageId = ""
         metadata = {}
