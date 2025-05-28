@@ -1,16 +1,26 @@
-# Agent2Agent and MCP: An End-to-End Tutorial for a complete Agentic Pipeline
+# Car Repair Shop Assistant: Agent2Agent and MCP Integration
 
 ## Introduction
 
 In the fast-moving world of agentic AI, two open protocols quietly solve the headaches that used to keep multi-agent projects from ever leaving the lab.
 
-A few months ago, Anthropic introduced [Model Context Protocol (MCP)](https://www.anthropic.com/news/model-context-protocol): A reliable access to the data and tools an agent needs once the conversation begins. Anthropic describes MCP as a USB-C port for language models—a single, well-defined connector that lets you plug the same model into GitHub, a Postgres database, or a custom knowledge base without rewriting the integration each time. By standardizing the way hosts, clients, and servers exchange "Tools," "resources," and "prompts," MCP turns context into something the model can count on rather than something developers keep stitching together ad hoc. ￼ ￼
+A few months ago, Anthropic introduced [Model Context Protocol (MCP)](https://www.anthropic.com/news/model-context-protocol): A reliable access to the data and tools an agent needs once the conversation begins. Anthropic describes MCP as a USB-C port for language models—a single, well-defined connector that lets you plug the same model into GitHub, a Postgres database, or a custom knowledge base without rewriting the integration each time. By standardizing the way hosts, clients, and servers exchange "Tools," "resources," and "prompts," MCP turns context into something the model can count on rather than something developers keep stitching together ad hoc.
 
-Agent2Agent (A2A), a new protocol by Google, tackles another obstacle: getting autonomous agents—often built on different frameworks and hosted in different places—to understand one another. Instead of brittle, one-off bridges, A2A gives every agent a tiny "agent card" that advertises its skills and an HTTP interface that lets other agents negotiate tasks, stream intermediate results, and hand over artifacts. Google started the project to give agents a common language regardless of vendor, and the open-source spec already shows how discovery, task life-cycle updates, and secure push notifications can work out of the box. ￼
+Agent2Agent (A2A), a new protocol by Google, tackles another obstacle: getting autonomous agents—often built on different frameworks and hosted in different places—to understand one another. Instead of brittle, one-off bridges, A2A gives every agent a tiny "agent card" that advertises its skills and an HTTP interface that lets other agents negotiate tasks, stream intermediate results, and hand over artifacts. Google started the project to give agents a common language regardless of vendor, and the open-source spec already shows how discovery, task life-cycle updates, and secure push notifications can work out of the box.
 
 With A2A handling how agents talk to one another and MCP handling how they tap into the outside world, you end up with small, focused agents who can coordinate fluently and still see the bigger picture—an architecture that feels less like a collection of scripts and more like a cooperative workforce.
 
+## Car Repair Shop Scenario
 
+This project demonstrates a complete agentic pipeline for a car repair shop using Agent2Agent and MCP protocols. The system consists of specialized agents that work together to handle various aspects of the repair business:
+
+**Shop Manager Agent**: The main coordinator that orchestrates all shop operations, manages customer interactions, and delegates tasks to specialized agents.
+
+**Mechanic Agent**: Handles technical diagnostics, repair procedures, and maintenance tasks. Has access to repair manuals, diagnostic tools, and technical specifications.
+
+**Supplier Agent**: Manages parts inventory, procurement, and supplier relationships. Can search for parts, check availability, and manage ordering processes.
+
+The agents communicate through the A2A protocol and access external resources through MCP servers, creating a realistic simulation of how AI agents might coordinate in a real business environment.
 
 ## The Structure of this Tutorial
 
@@ -18,7 +28,7 @@ This tutorial will build a complete agentic pipeline using Agent2Agent and MCP. 
 
 For the sake of simplicity, we will use elementary agents that have access to single MCPs and MCPs that perform easy operations like fetching data from an API or searching the web.
 
-We imagine we want to create a team of agents able to make simple reports about American Companies; in particular, we want to be able to ask questions such as "What is the price of the stocks of the top 10 companies in the S&P 500?" or "What are the top 5 producers of lumber in the US"?
+We imagine we want to create a team of agents able to handle various car repair shop operations; in particular, we want to be able to handle scenarios such as "My car is making a strange noise when I brake" or "I need to order brake pads for a 2018 Honda Civic".
 
 ## Note on the Code
 
@@ -37,68 +47,21 @@ While the MCP documentation was terrific, the Google Agent2Agent repository had 
 
 # MCP Servers
 
-Given our objective, we first define two services:
-- A crawler able to search on Google and read web pages
-- A stock retriever, able to get the price of a stock at a particular time and other helpful info
+Given our car repair shop scenario, we first define specialized services:
+- A search engine service for finding repair information, parts availability, and technical documentation
+- Additional services for inventory management, diagnostic procedures, and supplier information
 
-## The Stock Retriever Service
+## The Search Engine Service
 
-We define a simple stock retriever service using FinHub APIs. The retriever will return a stock's current price, min, max opening, and closing price (IMPORTANT: if you use the free version of the APIs, only the US market can be queried) with one endpoint and the stock symbol with the other.
+We define a search service using Serper APIs for web searching and page scraping. This service helps agents find repair procedures, troubleshooting guides, parts specifications, and other relevant information from across the web.
 
-```python
-class FinHubService:
-    def __init__(self):
-        """
- Initializes the finhubservice.
- """
-        self.client = finnhub.Client(api_key=os.getenv("FINNHUB_API_KEY"))
+The search service provides two main capabilities:
+1. **Web Search**: Search for repair information, part specifications, troubleshooting guides
+2. **Page Scraping**: Extract detailed content from repair manuals, technical documentation, and parts catalogs
 
-    def get_symbol_from_query(self, query: str) -> Dict[str,Any]:
-        """
- Given a query (e.g. name of a company) returns a dictionary with info. Use only if you have no idea about the symbol.
- :param query: name of company
- :return: dictionary with the response to the query
- """
+## The Web Search and Scraping Service
 
-        return self.client.symbol_lookup(
-            query=query,
- )
-
-    def get_price_of_stock(self, symbol: str) -> Dict[str,Any]:
-        """
- Given the symbol of a certain strock, returns the live info about it.
- :param symbol: The symbol of a stock, e.g. AAPL
- :return: a dictionary containing the current_price, change, %change, day high, low, opening and previous closing price
- """
- resp = self.client.quote(symbol)
-        return {
-             'current_price': resp['c'],
-             'change': resp['d'],
-             'percentage_change': resp['dp'],
-             'day_high': resp['h'],
-             'day_low': resp['l'],
-             'day_open_price': resp['o'],
-             'previous_close_price': resp['pc'],
- }
-```
-
-If we run our code with
-
-
-```python
- service = FinHubService()
-    print(service.get_price_of_stock("AAPL"))
-```
-
-We get something like:
-
-```json
- {'current_price': 199.74, 'change': 6.58, 'percentage_change': 3.4065, 'day_high': 201.59, 'day_low': 195.97, 'day_open_price': 196.12, 'previous_close_price': 193.16}
-```
-
-## The Crawler Service
-
-Now that we have our Retriever, we want a very simple crawler to search on Google for information and read the web pages returned as results.
+This service enables our agents to find and access repair information from across the web.
 
 ```python
     class SerperDevService:
@@ -170,7 +133,7 @@ Now that we have our Retriever, we want a very simple crawler to search on Googl
 
 ## From Service to Server
 
-It is now time to transform those two services into MCP server(s). Given the limited capabilities of the agents in this tutorial, we could create a single MCP server that provides all the tools needed by the agent(s). Nonetheless, the goal here is not to have the best production-ready solution, quite the contrary, but on the other hand to experiment: for this reason, we will create two servers, one per service.
+It is now time to transform these services into MCP server(s). For our car repair shop, we create specialized MCP servers that provide different capabilities to our agents. This modular approach allows each agent to access only the tools they need for their specific role in the shop.
 
 Within the Model Context Protocol, servers come in two flavors distinguished by their transport layer. An STDIO MCP server runs as a local subprocess and pipes JSON-RPC messages over its own stdin/stdout streams, giving minimal latency, full-duplex messaging, and zero network dependencies: it is ideal for command-line tools or same-machine integrations. A Server-Sent Events (SSE) MCP server instead exposes an HTTP endpoint: the client sends requests with lightweight POSTs while the server pushes results back on a single SSE stream, making it naturally web-friendly and accessible across networks or from a browser. In practice, stdio is the lean, no-frills option when everything lives on one host, whereas SSE trades a bit of HTTP overhead and one-way streaming semantics for firewall traversal, browser compatibility, and remote reach.
 
@@ -217,7 +180,7 @@ We define the Stocks scraper MCP server in the very same way.
 
 ## Let's use the MCP Server
 
-So, at this point we have our working MCP server and we just need to use it. Given this tutorial is about A2A Framework as well, and A2A has been created by Google, we will use the new google ADK to create our agents. To start, we create a single, simple agent that use our MCP server to search the web for information.
+So, at this point we have our working MCP server and we just need to use it. Given this tutorial is about A2A Framework as well, and A2A has been created by Google, we will use the new google ADK to create our agents. To start, we create a single, simple agent that use our MCP server to search for repair information and technical documentation.
 
 We first create a function that spawns our MCP server and "transforms" it into a tool for our ADK agent.
 
@@ -254,9 +217,9 @@ async def get_agent_async():
   print(f"Fetched {len(tools)} tools from MCP server.")
   root_agent = LlmAgent(
       model='gemini-2.0-flash-lite',
-      name='search_agent',
-      description="Agent to answer questions using Google Search.",
-      instruction="You are an expert researcher. When someone asks you something you always double check online. You always stick to the facts.",
+      name='repair_assistant',
+      description="Agent to assist with car repair queries using web search.",
+      instruction="You are an expert car repair assistant. When someone asks about car problems or repairs, you search for accurate technical information online. You always stick to factual repair procedures and safety guidelines.",
       tools=tools, # 
   )
   return root_agent, exit_stack
@@ -277,7 +240,7 @@ async def async_main():
     )
     print(f"Session created with ID: {session.id}")
 
-    query = "What are the most tipical sports of the Aosta Valley? Answer with a lot of details."
+    query = "My 2018 Honda Civic is making a grinding noise when I brake. What could be the cause and how should I fix it?"
     print(f"User Query: '{query}'")
     content = types.Content(role='user', parts=[types.Part(text=query)])
     root_agent, exit_stack = await get_agent_async()
@@ -309,29 +272,12 @@ async def async_main():
     print("Cleanup complete.")
 ```
 
-This function will create a session, run the agent, and print the final response (If you are interested in the answer to the question about the Aosta Valley, you can see below).
-
-<details>
-<summary>If you are interested in the answer to the question about the Aosta Valley, click here</summary>
-Okay, here are the traditional sports specific to the Aosta Valley, with detailed explanations of how they are played:
-
-The Aosta Valley boasts several unique traditional sports, deeply rooted in its rural history and culture, primarily played in spring and autumn. The main ones are **Tsan**, **Rebatta**, **Fiolet**, and **Palet**. Additionally, the game of **Morra** is also a popular traditional pastime.
-
-*   **Tsan**: Often compared vaguely to baseball or Romanian Oina, Tsan (meaning "field" in the local dialect) is a team sport played on a large grass field, ideally at least 135 meters long. Two teams of 12 players compete. The game involves two main phases. In the first phase ('battià' or 'tsachà'), players from one team take turns hitting a small ball ('tsan') placed in a notch ('t aspot') on a long wooden or plastic pole ('percha' or 'pertse') which rests obliquely on a stand ('bes'). The hitter uses a wooden stick ('baquet') to strike the end of the 'percha', launching the 'tsan' into the air, and then hits the airborne 'tsan' with the 'baquet' to send it downfield. The opposing team is spread across the field trying to intercept the 'tsan' before it lands, primarily using wooden paddles ('pilon' or 'boquet'), which they can even throw to block the ball. A hit is considered 'good' ('bon') if it lands within the designated field boundaries and is not intercepted. The batting player continues until their shot is intercepted, or they hit the 'tsan' out of bounds three consecutive times or four times in total. The number of 'bone' (good hits) each player accumulates is tallied for the team. After all players on the first team have batted, the teams switch roles. In the second phase ('servià' or 'paletà'), each player must convert their accumulated 'bone' into distance. A player from the opposing team throws the 'tsan' high in the air towards the original batting area. The player whose turn it is attempts to hit this thrown 'tsan' with a different wooden paddle ('paleta' or 'piota'), aiming for maximum distance. The distance of this hit is measured in meters. Finally, the total meters achieved by all players on each team are summed up. The team that accumulates an advantage of at least 40 meters over the opponent wins the match; if the difference is less, it's a draw (though in finals or play-offs, a single meter advantage is enough to win). Due to the hardness of the wooden 'tsan', players often wear helmets for safety.
-
-*   **Rebatta**: This game belongs to the family of bat-and-ball sports, like golf or baseball. It involves hitting a small ball ('rebatta', made of wood studded with nails or metal, about 30mm diameter) as far as possible. To do this, the player uses two specific wooden tools. First is the 'fioletta', a pipe-shaped lever about 20cm long. The 'rebatta' is placed on the slightly hollowed end of the 'fioletta' which rests on the ground. The player then strikes the *other* end of the 'fioletta' with a long wooden club ('masetta', 100-140cm long with a distinct head called 'maciocca') making the 'fioletta' act as a lever to pop the 'rebatta' into the air (this action is called 'levoù'). Immediately after, the player swings the 'masetta' again to strike the airborne 'rebatta' forcefully, sending it downfield. The playing field is typically an isosceles triangle marked out on grass, with the vertex at the batting spot ('place'). The length varies by category but can be up to 240 meters. Lines are marked across the field every 15 meters, and landing the 'rebatta' beyond a line scores a corresponding number of points (1 point for passing the first line, 2 for the second, etc.). Matches are often played between teams (e.g., five players each), competing over a set number of turns ('bars'), with both team and individual championships held.
-
-*   **Fiolet**: Similar in objective to Rebatta (hitting an object for maximum distance), Fiolet uses slightly different equipment and technique. The object hit is the 'fiolet' itself, which is ovoid-shaped with one slightly flattened part. Instead of using a separate lever like Rebatta's 'fioletta', the 'fiolet' is balanced directly on a smooth stone ('pira') or a purpose-made stand. The player uses a bat (also often called 'masetta' or 'baton') to strike the edge of the balanced 'fiolet' skillfully. This initial impact makes the 'fiolet' jump vertically into the air. The player then takes a full swing with the bat to hit the airborne 'fiolet' and drive it as far as possible down the field, potentially over 150 meters. Like Rebatta, scoring is based on the distance achieved, often measured in zones or points corresponding to set distances. Competitions include team events (often 5 players per team) and a notable individual championship where the winner receives the "Baton d'Or" (Golden Bat) trophy for the year.
-
-*   **Palet**: This sport is akin to horseshoes or the French 'jeu de palets'. Players throw heavy, round, flat metal discs called 'palets' towards a smaller target pin, known as the 'bolin' or 'billet', which is placed at a distance (often around 10-20 meters) on a designated court, usually made of clay or packed earth. The objective is to land your 'palet' as close to the 'bolin' as possible. Players typically throw a set number of 'palets' per round. Scoring occurs after all 'palets' are thrown in a round. Points are awarded to the player or team whose 'palet(s)' are closest to the 'bolin'. Usually, only the 'palets' closer than the opponent's closest 'palet' can score. It requires precision and strategy in throwing the heavy discs. It's played both individually and in teams, often in dedicated courts found throughout the valley.
-
-*   **Morra** (or Moura): While simpler and often considered more of a game than a sport requiring a dedicated field, Morra is a very traditional and lively pastime in the Aosta Valley. It's typically played between two people. Both players simultaneously extend one hand, showing a number of fingers from 1 to 5 (or a closed fist representing zero). At the same instant they extend their hand, each player loudly shouts out their guess for the *total* sum of fingers shown by both players combined (so the guess will be between 0 and 10). The player who correctly guesses the sum scores a point. The game is fast-paced, often played in rounds to a set score, and is known for the animated shouts and gestures involved.
-</details>
+This function will create a session, run the agent, and print the final response to the car repair query.
 
 
 ## Multiple Local MCP Servers: where STDIO is not enough
 
-Now, we have a single MCP server that can be used by our agent. However, especially if we plan to play with multiple agents, we want to have multiple MCP servers, each one with a specific purpose. For example, we want one MCP server to be able to search the web, another to retrieve stocks, and so on.
+Now, we have a single MCP server that can be used by our agent. However, especially if we plan to play with multiple agents, we want to have multiple MCP servers, each one with a specific purpose. For example, we want one MCP server to search for repair information, another to manage inventory and parts, and so on.
 
 If you try to spawn multiple STDIO-based MCP servers, you will notice that they will not work at the same time. To solve this problem, we can use an SSE-based MCP server with some tricks.
 
@@ -434,7 +380,7 @@ It is now time to create a more complex pipeline with multiple agents. At first,
 
 ## Hierarchical Crew
 
-Now that we have our MCP servers set up, we can create a hierarchical crew of agents using the ADK library. In this example, we'll create a team of agents that can analyze companies and their stocks, with a main coordinator agent delegating tasks to specialized sub-agents.
+Now that we have our MCP servers set up, we can create a hierarchical crew of agents using the ADK library. In this example, we'll create a team of agents that can handle car repair shop operations, with a main shop manager agent delegating tasks to specialized sub-agents.
 
 ### Setting Up the Crew
 
@@ -442,9 +388,9 @@ First, we define some constants for our application:
 
 ```python
 MODEL = 'gemini-2.0-flash-lite'
-APP_NAME = 'company_analysis_app'
-USER_ID = 'searcher_usr'
-SESSION_ID = 'searcher_session'
+APP_NAME = 'car_repair_shop_app'
+USER_ID = 'shop_customer'
+SESSION_ID = 'repair_session'
 ```
 
 These constants define the model we'll use (Gemini 2.5 Pro), the application name, and session identifiers.
@@ -453,26 +399,26 @@ These constants define the model we'll use (Gemini 2.5 Pro), the application nam
 
 We create two specialized agents, each with their own set of tools:
 
-1. **Stock Analysis Agent**: This agent is responsible for analyzing stock data and providing insights about stock prices and market performance.
+1. **Mechanic Agent**: This agent is responsible for technical diagnostics, repair procedures, and troubleshooting car problems.
 
 ```python
-stock_analysis_agent = Agent(
+mechanic_agent = Agent(
     model=MODEL,
-    name="stock_analysis_agent",
-    instruction="Analyze stock data and provide insights.",
-    description="Handles stock analysis and provides insights, in particular, can get the latest stock price.",
-    tools=stocks_tools,
+    name="mechanic_agent",
+    instruction="Expert mechanic specializing in car diagnostics and repair procedures.",
+    description="Handles technical diagnostics, repair procedures, and provides expert automotive advice.",
+    tools=search_tools,
 )
 ```
 
-2. **Search Agent**: This agent specializes in searching the web and reading online content.
+2. **Supplier Agent**: This agent specializes in parts management, inventory, and supplier relations.
 
 ```python
-search_agent = Agent(
+supplier_agent = Agent(
     model=MODEL,
-    name="search_agent",
-    instruction="Expert googler. Can search anything on google and read pages online.",
-    description="Handles search queries and can read pages online.",
+    name="supplier_agent",
+    instruction="Expert in automotive parts, inventory management, and supplier relations.",
+    description="Handles parts searches, availability checks, and supplier management.",
     tools=search_tools,
 )
 ```
@@ -483,26 +429,27 @@ The root agent acts as the coordinator, delegating tasks to the specialized agen
 
 ```python
 root_agent = Agent(
-    name="company_analysis_assistant",
+    name="shop_manager",
     model=MODEL,
-    description="Main assistant: Handles requests about stocks and information of companies.",
+    description="Main shop manager: Handles customer requests and coordinates repair shop operations.",
     instruction=(
-        "You are the main Assistant coordinating a team. Your primary responsibilities are providing company and stocks reports and delegating other tasks.\n"
-        "1. If the user asks about a company, provide a detailed report.\n"
-        "2. If you need any information about the current stock price, delegate to the stock_analysis_agent.\n"
-        "3. If you need to search for information, delegate to the search_agent.\n"
-        "Analyze the user's query and delegate or handle it appropriately. If unsure, ask for clarification. Only use tools or delegate as described."
+        "You are the main Shop Manager coordinating a car repair team. Your primary responsibilities are managing customer requests and delegating repair tasks.\n"
+        "1. If the customer asks about car problems or repairs, delegate to the mechanic_agent for technical diagnosis.\n"
+        "2. If you need information about parts, availability, or ordering, delegate to the supplier_agent.\n"
+        "3. Provide clear coordination between technical diagnosis and parts management.\n"
+        "Analyze the customer's request and delegate appropriately. If unsure, ask for clarification. Always prioritize customer safety and proper repair procedures."
     ),
-    sub_agents=[search_agent, stock_analysis_agent],
+    sub_agents=[mechanic_agent, supplier_agent],
     output_key="last_assistant_response",
 )
 ```
 
 The root agent's instruction clearly defines its role and how it should delegate tasks to its sub-agents. It's designed to:
-- Provide detailed company reports
-- Delegate stock price queries to the stock analysis agent
-- Delegate search queries to the search agent
-- Ask for clarification when needed
+- Manage customer interactions and repair requests
+- Delegate technical problems to the mechanic agent
+- Delegate parts-related queries to the supplier agent
+- Coordinate between diagnosis and parts management
+- Prioritize safety and proper procedures
 
 ### Running the Crew
 
@@ -528,7 +475,6 @@ async def async_main():
     
     # Initialize tools from MCP servers
     search_tools, search_exit_stack = await return_sse_mcp_tools_search()
-    stocks_tools, stocks_exit_stack = await return_sse_mcp_tools_stocks()
 
     # Create and run the agent pipeline
     runner = Runner(
@@ -557,20 +503,19 @@ async def async_main():
             print(event)
 
     # Cleanup
-    await stocks_exit_stack.aclose()
     await search_exit_stack.aclose()
 ```
 
 This implementation creates a hierarchical crew where:
-1. The root agent receives the user's query
+1. The shop manager receives the customer's query
 2. It analyzes the query and decides whether to:
    - Handle it directly
-   - Delegate to the stock analysis agent
-   - Delegate to the search agent
+   - Delegate to the mechanic agent for technical issues
+   - Delegate to the supplier agent for parts-related queries
 3. The specialized agents use their respective MCP tools to gather information
-4. The root agent coordinates the responses and provides a final answer to the user
+4. The shop manager coordinates the responses and provides a final answer to the customer
 
-The crew will automatically delegate tasks to the appropriate agents and provide comprehensive responses combining information from both the stock market and web searches.
+The crew will automatically delegate tasks to the appropriate agents and provide comprehensive responses combining technical diagnosis with parts management information.
 
 ## Agent2Agent Crew
 
@@ -706,18 +651,18 @@ These methods handle the conversion between different response formats, supporti
 
 #### Usage Example
 
-Here's how you can use the `ADKAgent` to create a coordinator agent that delegates tasks to specialized agents:
+Here's how you can use the `ADKAgent` to create a shop manager agent that delegates tasks to specialized repair agents:
 
 ```python
-# Create a host agent
-host_agent = ADKAgent(
+# Create a shop manager host agent
+shop_manager = ADKAgent(
     model="gemini-2.0-flash-lite",
-    name="coordinator",
-    description="Main coordinator agent",
-    instructions="Coordinate tasks between agents",
+    name="shop_manager",
+    description="Car repair shop manager agent",
+    instructions="Coordinate repair tasks between mechanic and supplier agents",
     tools=[],
     is_host_agent=True,
-    remote_agent_addresses=["http://agent1:8080", "http://agent2:8080"]
+    remote_agent_addresses=["http://mechanic:8080", "http://supplier:8080"]
 )
 ```
 
@@ -748,32 +693,32 @@ Let's break down the key components of the `generate_agent_card` function:
 4. **Skills**:
    - `skills`: A list of `AgentSkill` objects that describe the specific capabilities of the agent
 
-Here's an example of how to use the `generate_agent_card` function to create a card for a stock analysis agent:
+Here's an example of how to use the `generate_agent_card` function to create a card for a mechanic agent:
 
 ```python
-stock_agent_card = generate_agent_card(
-    agent_name="stock_analyzer",
-    agent_description="Analyzes stock market data and provides insights",
+mechanic_agent_card = generate_agent_card(
+    agent_name="mechanic_agent",
+    agent_description="Expert mechanic for car diagnostics and repair procedures",
     agent_url="http://localhost:8080",
     agent_version="1.0.0",
     can_stream=True,
     can_push_notifications=True,
     skills=[
         AgentSkill(
-            name="stock_analysis",
-            description="Analyzes stock prices and market trends",
+            name="car_diagnostics",
+            description="Diagnoses car problems and provides repair recommendations",
             input_schema={
                 "type": "object",
                 "properties": {
-                    "symbol": {"type": "string"},
-                    "timeframe": {"type": "string"}
+                    "symptoms": {"type": "string"},
+                    "vehicle_info": {"type": "string"}
                 }
             },
             output_schema={
                 "type": "object",
                 "properties": {
-                    "price": {"type": "number"},
-                    "trend": {"type": "string"}
+                    "diagnosis": {"type": "string"},
+                    "repair_steps": {"type": "array"}
                 }
             }
         )
@@ -968,8 +913,8 @@ We create the Host Agent:
 
 ```python
 async def run_agent():
-    AGENT_NAME = "host_agent"
-    AGENT_DESCRIPTION = "An agent orchestrates the decomposition of the user request into tasks that can be performed by the child agents."
+    AGENT_NAME = "shop_manager_agent"
+    AGENT_DESCRIPTION = "A car repair shop manager that coordinates repair tasks between mechanic and supplier agents."
     PORT = 12000
     HOST = "0.0.0.0"
     AGENT_URL = f"http://{HOST}:{PORT}"
@@ -977,15 +922,15 @@ async def run_agent():
     MODEL = 'gemini-2.0-flash-lite'
     AGENT_SKILLS = [
         AgentSkill(
-            id="COORDINATE_AGENT_TASKS",
-            name="coordinate_tasks",
-            description="coordinate tasks between agents.",
+            id="COORDINATE_REPAIR_TASKS",
+            name="coordinate_repair_tasks",
+            description="coordinate repair tasks between mechanic and supplier agents.",
         ),
     ]
 
     list_urls = [
-        "http://localhost:11000/google_search_agent",
-        "http://localhost:10000/stock_agent",
+        "http://localhost:11000/mechanic_agent",
+        "http://localhost:10000/supplier_agent",
     ]
 
     AGENT_CARD = generate_agent_card(
@@ -1001,23 +946,23 @@ async def run_agent():
         skills=AGENT_SKILLS,
     )
 
-    host_agent = ADKAgent(
+    shop_manager_agent = ADKAgent(
         model=MODEL,
-        name="host_agent",
-        description="",
+        name="shop_manager_agent",
+        description="Car repair shop manager",
         tools=[],
-        instructions="",
+        instructions="You are a car repair shop manager. Coordinate repair tasks between mechanic and supplier agents to provide excellent customer service.",
         is_host_agent=True,
         remote_agent_addresses=list_urls,
     )
 
     task_manager = generate_agent_task_manager(
-        agent=host_agent,
+        agent=shop_manager_agent,
     )
     server = A2AServer(
         host=HOST,
         port=PORT,
-        endpoint="/host_agent",
+        endpoint="/shop_manager_agent",
         agent_card=AGENT_CARD,
         task_manager=task_manager
     )
@@ -1025,33 +970,12 @@ async def run_agent():
     await server.astart()
 ```
 
-The Search Agent:
+The Mechanic Agent:
 
 ```python
-
-import asyncio
-from typing import List, Any
-
-from dotenv import load_dotenv, find_dotenv
-from google.adk import Agent
-from google.adk.tools import google_search
-
-from a2a_servers.agent_servers.utils import generate_agent_task_manager, generate_agent_card
-from a2a_servers.agents.adk_agent import ADKAgent
-from a2a_servers.common.agent_task_manager import AgentTaskManager
-from a2a_servers.common.server.server import A2AServer
-from a2a_servers.common.types import (
-    AgentCard,
-    AgentCapabilities,
-    AgentSkill,
-)
-from adk_agents_testing.mcp_tools.mcp_tool_search import return_sse_mcp_tools_search
-
-load_dotenv(find_dotenv())
-
 async def run_agent():
-    AGENT_NAME = "google_search_agent"
-    AGENT_DESCRIPTION = "An agent that handles search queries and can read pages online."
+    AGENT_NAME = "mechanic_agent"
+    AGENT_DESCRIPTION = "An expert mechanic agent that handles car diagnostics and repair procedures."
     HOST = "0.0.0.0"
     PORT = 11000
     AGENT_URL = f"http://{HOST}:{PORT}"
@@ -1059,9 +983,9 @@ async def run_agent():
     MODEL = 'gemini-2.0-flash-lite'
     AGENT_SKILLS = [
         AgentSkill(
-            id="GOOGLE_SEARCH",
-            name="google_search",
-            description="Handles search queries and can read pages online.",
+            id="CAR_DIAGNOSTICS",
+            name="car_diagnostics",
+            description="Handles car diagnostics, troubleshooting, and repair procedures.",
         ),
     ]
 
@@ -1078,44 +1002,40 @@ async def run_agent():
         skills=AGENT_SKILLS,
     )
 
-    gsearch_tools, g_search_exit_stack = await return_sse_mcp_tools_search()
+    mechanic_tools, mechanic_exit_stack = await return_sse_mcp_tools_mechanic()
 
-    google_search_agent = ADKAgent(
+    mechanic_agent = ADKAgent(
         model=MODEL,
-        name="google_search_agent",
-        description="Handles search queries and can read pages online.",
-        tools=gsearch_tools,
+        name="mechanic_agent",
+        description="Expert mechanic for car diagnostics and repair procedures.",
+        tools=mechanic_tools,
         instructions=(
-            "You are an expert googler. Can search anything on google and read pages online."
+            "You are an expert car mechanic. You specialize in diagnosing car problems, "
+            "providing repair procedures, and ensuring vehicle safety. Always prioritize "
+            "safety and provide step-by-step repair instructions."
         ),
     )
 
     task_manager = generate_agent_task_manager(
-        agent=google_search_agent,
+        agent=mechanic_agent,
     )
     server = A2AServer(
         host=HOST,
         port=PORT,
-        endpoint="/google_search_agent",
+        endpoint="/mechanic_agent",
         agent_card=AGENT_CARD,
         task_manager=task_manager
     )
     print(f"Starting {AGENT_NAME} A2A Server on {AGENT_URL}")
     await server.astart()
-
-
-if __name__ == "__main__":
-    asyncio.run(
-        run_agent()
-    )
 ```
 
-And the Stock Agent:
+And the Supplier Agent:
 
 ```python
 async def run_agent():
-    AGENT_NAME = "stock_report_agent"
-    AGENT_DESCRIPTION = "An agent that provides US stock prices and info."
+    AGENT_NAME = "supplier_agent"
+    AGENT_DESCRIPTION = "An expert supplier agent that handles automotive parts sourcing and inventory management."
     PORT = 10000
     HOST = "0.0.0.0"
     AGENT_URL = f"http://{HOST}:{PORT}"
@@ -1123,9 +1043,9 @@ async def run_agent():
     MODEL = 'gemini-2.0-flash-lite'
     AGENT_SKILLS = [
         AgentSkill(
-            id="SKILL_STOCK_REPORT",
-            name="stock_report",
-            description="Provides stock prices and info.",
+            id="PARTS_MANAGEMENT",
+            name="parts_management",
+            description="Handles automotive parts sourcing, availability checking, and supplier management.",
         ),
     ]
 
@@ -1142,28 +1062,27 @@ async def run_agent():
         skills=AGENT_SKILLS,
     )
 
-    stocks_tools, stocks_exit_stack = await return_sse_mcp_tools_stocks()
+    supplier_tools, supplier_exit_stack = await return_sse_mcp_tools_supplier()
 
-    stock_analysis_agent = ADKAgent(
+    supplier_agent = ADKAgent(
         model=MODEL,
-        name="stock_analysis_agent",
-        description="Handles stock analysis and provides insights, in particular, can get the latest stock price.",
-        tools=stocks_tools,
+        name="supplier_agent",
+        description="Expert in automotive parts sourcing and inventory management.",
+        tools=supplier_tools,
         instructions=(
-            "Analyze stock data and provide insights. You can also get the latest stock price."
-            "If the user asks about a company, the stock prices for the said company."
-            "If the user asks about a stock, provide the latest stock price and any other relevant information."
-            "You can get only the latest stock price for US companies."
+            "You are an expert automotive parts supplier. You specialize in finding parts, "
+            "checking availability, managing inventory, and coordinating with suppliers. "
+            "Always provide accurate part numbers, pricing information, and delivery timelines."
         ),
     )
 
     task_manager = generate_agent_task_manager(
-        agent=stock_analysis_agent,
+        agent=supplier_agent,
     )
     server = A2AServer(
         host=HOST,
         port=PORT,
-        endpoint="/stock_agent",
+        endpoint="/supplier_agent",
         agent_card=AGENT_CARD,
         task_manager=task_manager
     )
