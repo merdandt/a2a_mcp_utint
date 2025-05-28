@@ -96,3 +96,6 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+    """
+    Hello, my 2018 Toyota Camry has been making a strange rattling noise when I accelerate and the check engine light came on yesterday. I'd like to get it diagnosed and fixed as soon as possible. Could you help me understand what might be wrong and how much it might cost to repair? My vehicle ID is XYZ123.
+    """

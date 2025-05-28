@@ -4,7 +4,10 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
 from starlette.applications import Starlette
 from starlette.requests import Request
+from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
 import random
 from typing import Dict, List, Optional
 from datetime import datetime, timedelta
@@ -280,12 +283,28 @@ def create_starlette_app(
                 mcp_server.create_initialization_options(),
             )
 
+    # Health check endpoint for readiness
+    async def health(request: Request):  # noqa: U100
+        return JSONResponse({"status": "ok"})
+
+    # Configure CORS to allow external testing clients
+    middleware = [
+        Middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["*"],
+        ),
+    ]
+
     return Starlette(
         debug=debug,
         routes=[
-            Route("/sse", endpoint=handle_sse),
+            Route("/health", endpoint=health, methods=["GET"]),
+            Route("/sse", endpoint=handle_sse, methods=["GET"]),
             Mount("/messages/", app=sse.handle_post_message),
         ],
+        middleware=middleware,
     )
 
 if __name__ == "__main__":
