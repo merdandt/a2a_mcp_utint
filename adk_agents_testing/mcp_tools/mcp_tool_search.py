@@ -10,13 +10,13 @@ async def return_mcp_tools_search():
             command="/opt/homebrew/bin/uv",
             args=[
                 "--directory",
-                "/Users/tsadoq/gits/a2a-mcp-tutorial/mcp_server",
+                "/Users/xskills/Development/Python/A2A_MCP/a2a_mcp_utint/mcp_server",
                 "run",
                 "search_server.py"
             ],
             env={
                 "MCP_PORT":"8000",
-                "PYTHONPATH": "/Users/tsadoq/gits/a2a-mcp-tutorial:${PYTHONPATH}"
+                "PYTHONPATH": "/Users/xskills/Development/Python/A2A_MCP/a2a_mcp_utint:${PYTHONPATH}"
             },
         )
     )

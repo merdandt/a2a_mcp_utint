@@ -13,7 +13,7 @@ from termcolor import colored
 
 load_dotenv(find_dotenv())
 
-MODEL = 'gemini-2.5-pro-exp-03-25'
+MODEL = 'gemini-2.0-flash-lite'
 APP_NAME = 'company_analysis_app'
 USER_ID = 'searcher_usr'
 SESSION_ID = 'searcher_session'

@@ -253,7 +253,7 @@ async def get_agent_async():
   tools, exit_stack = await get_tools_async()
   print(f"Fetched {len(tools)} tools from MCP server.")
   root_agent = LlmAgent(
-      model='gemini-2.5-pro-exp-03-25',
+      model='gemini-2.0-flash-lite',
       name='search_agent',
       description="Agent to answer questions using Google Search.",
       instruction="You are an expert researcher. When someone asks you something you always double check online. You always stick to the facts.",
@@ -441,7 +441,7 @@ Now that we have our MCP servers set up, we can create a hierarchical crew of ag
 First, we define some constants for our application:
 
 ```python
-MODEL = 'gemini-2.5-pro-exp-03-25'
+MODEL = 'gemini-2.0-flash-lite'
 APP_NAME = 'company_analysis_app'
 USER_ID = 'searcher_usr'
 SESSION_ID = 'searcher_session'
@@ -711,7 +711,7 @@ Here's how you can use the `ADKAgent` to create a coordinator agent that delegat
 ```python
 # Create a host agent
 host_agent = ADKAgent(
-    model="gemini-2.5-pro",
+    model="gemini-2.0-flash-lite",
     name="coordinator",
     description="Main coordinator agent",
     instructions="Coordinate tasks between agents",
@@ -974,7 +974,7 @@ async def run_agent():
     HOST = "0.0.0.0"
     AGENT_URL = f"http://{HOST}:{PORT}"
     AGENT_VERSION = "1.0.0"
-    MODEL = 'gemini-2.5-pro-preview-03-25'
+    MODEL = 'gemini-2.0-flash-lite'
     AGENT_SKILLS = [
         AgentSkill(
             id="COORDINATE_AGENT_TASKS",
@@ -1056,7 +1056,7 @@ async def run_agent():
     PORT = 11000
     AGENT_URL = f"http://{HOST}:{PORT}"
     AGENT_VERSION = "1.0.0"
-    MODEL = 'gemini-2.5-pro-preview-03-25'
+    MODEL = 'gemini-2.0-flash-lite'
     AGENT_SKILLS = [
         AgentSkill(
             id="GOOGLE_SEARCH",
@@ -1120,7 +1120,7 @@ async def run_agent():
     HOST = "0.0.0.0"
     AGENT_URL = f"http://{HOST}:{PORT}"
     AGENT_VERSION = "1.0.0"
-    MODEL = 'gemini-2.5-pro-preview-03-25'
+    MODEL = 'gemini-2.0-flash-lite'
     AGENT_SKILLS = [
         AgentSkill(
             id="SKILL_STOCK_REPORT",
@@ -1176,27 +1176,37 @@ Then, run everything.
 First the MCP Servers:
 
 ```bash
-uv run mcp server/sse/search_server.py
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+uv run mcp_server/sse/search_server.py
 ```
 
 ```bash
-uv run mcp server/sse/stocks_server.py
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+uv run mcp_server/sse/stocks_server.py
 ```
 
 And then the A2A Servers:
 
 ```bash
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 uv run a2a_servers/agent_servers/stock_report_agent_server.py
 ```
 
 ```bash
-uv run a2a_servers/agent_servers/google_search_agent_server.py
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+uv run a2a_servers/agent_servers/gsearch_report_agent_server.py
 ```
 
 And finally, the Host Agent:
 
 ```bash
-uv run a2a_servers/host_agent_server.py
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+uv run a2a_servers/agent_servers/host_agent_server.py
 ```
 
 We can then contact the host agent (e.g, using the script at `a2a_servers/run_from_local_client.py`).
+```bash
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+uv run a2a_servers/run_from_local_client.py
+```
+

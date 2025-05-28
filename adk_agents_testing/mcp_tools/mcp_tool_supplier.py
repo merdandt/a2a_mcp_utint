@@ -3,8 +3,8 @@ from google.adk.tools.mcp_tool.mcp_toolset import SseServerParams
 from mcp import StdioServerParameters
 
 
-async def return_mcp_tools_stocks():
-    print("Attempting to connect to MCP server for stocks analyis read...")
+async def return_mcp_tools_supplier():
+    print("Attempting to connect to MCP server for supplier analysis read...")
     tools, exit_stack = await MCPToolset.from_server(
         connection_params=StdioServerParameters(
             command="/opt/homebrew/bin/uv",
@@ -12,7 +12,7 @@ async def return_mcp_tools_stocks():
                 "--directory",
                 "/Users/xskills/Development/Python/A2A_MCP/a2a_mcp_utint/mcp_server",
                 "run",
-                "stocks_server.py"
+                "supplier_server.py"
             ],
             env={
                 "MCP_PORT":"8001",
@@ -23,10 +23,10 @@ async def return_mcp_tools_stocks():
     print("MCP Toolset created successfully.")
     return tools, exit_stack
 
-async def return_sse_mcp_tools_stocks():
-    print("Attempting to connect to MCP server for stock info...")
+async def return_sse_mcp_tools_supplier():
+    print("Attempting to connect to MCP server for supplier info...")
     server_params = SseServerParams(
-        url="http://localhost:8181/sse",
+        url="http://localhost:8081/sse",
     )
     tools, exit_stack = await MCPToolset.from_server(connection_params=server_params)
     print("MCP Toolset created successfully.")

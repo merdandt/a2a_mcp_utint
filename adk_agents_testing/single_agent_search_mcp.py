@@ -20,12 +20,12 @@ async def get_tools_async():
           command="/opt/homebrew/bin/uv",
           args=[
               "--directory",
-              "/Users/tsadoq/gits/a2a-mcp-tutorial/mcp_server",
+              "/Users/xskills/Development/Python/A2A_MCP/a2a_mcp_utint/mcp_server/sse",
               "run",
               "search_server.py"
           ],
           env={
-              "PYTHONPATH": "/Users/tsadoq/gits/a2a-mcp-tutorial:${PYTHONPATH}"
+              "PYTHONPATH": "/Users/xskills/Development/Python/A2A_MCP/a2a_mcp_utint:${PYTHONPATH}"
           },
       )
   )
@@ -37,7 +37,7 @@ async def get_agent_async():
   tools, exit_stack = await get_tools_async()
   print(f"Fetched {len(tools)} tools from MCP server.")
   root_agent = LlmAgent(
-      model='gemini-2.5-pro-exp-03-25', # Adjust model name if needed based on availability
+      model='gemini-2.0-flash-lite', # Adjust model name if needed based on availability
       name='search_agent',
       description="Agent to answer questions using Google Search.",
       instruction="You are an expert researcher. When someone asks you something you always double check online. You always stick to the facts.",
@@ -54,7 +54,7 @@ async def async_main():
     )
     print(f"Session created with ID: {session.id}")
 
-    query = "Quali sono gli sport tipici della valle d'aosta? Rispondi in maniera precisa e piena di dettagli"
+    query = "What are the typical sports of the Aosta Valley? Answer precisely and with full details"
     print(f"User Query: '{query}'")
     content = types.Content(role='user', parts=[types.Part(text=query)])
     root_agent, exit_stack = await get_agent_async()
