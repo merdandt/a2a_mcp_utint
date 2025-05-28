@@ -1177,36 +1177,35 @@ First the MCP Servers:
 
 ```bash
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-uv run mcp_server/sse/search_server.py
+uv run mcp_server/sse/mechanic_server.py
 ```
 
 ```bash
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-uv run mcp_server/sse/stocks_server.py
+uv run mcp_server/sse/supplier_server.py
 ```
 
 And then the A2A Servers:
 
 ```bash
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-uv run a2a_servers/agent_servers/stock_report_agent_server.py
+uv run a2a_servers/agent_servers/mechanic_agent_server.py
 ```
 
 ```bash
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-uv run a2a_servers/agent_servers/gsearch_report_agent_server.py
+uv run a2a_servers/agent_servers/supplier_agent_server.py
 ```
 
 And finally, the Host Agent:
 
 ```bash
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-uv run a2a_servers/agent_servers/host_agent_server.py
+uv run a2a_servers/agent_servers/shop_manager_agent_server.py
 ```
 
 We can then contact the host agent (e.g, using the script at `a2a_servers/run_from_local_client.py`).
 ```bash
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
-uv run a2a_servers/run_from_local_client.py
+uv run a2a_servers/run_from_local_shop_client.py
 ```
-

@@ -18,7 +18,7 @@ async def run_agent():
     HOST = "0.0.0.0"
     AGENT_URL = f"http://{HOST}:{PORT}"
     AGENT_VERSION = "1.0.0"
-    MODEL = 'gemini-2.0-flash-lite'
+    MODEL = 'gemini-2.5-pro-preview-05-06'
     AGENT_SKILLS = [
         AgentSkill(
             id="MANAGE_VEHICLE_REPAIRS",
@@ -37,7 +37,8 @@ async def run_agent():
         agent_description=AGENT_DESCRIPTION,
         agent_url=AGENT_URL,
         agent_version=AGENT_VERSION,
-        can_stream=False,
+        # enable streaming for multi-turn and incremental responses
+        can_stream=True,
         can_push_notifications=False,
         can_state_transition_history=True,
         default_input_modes=["text"],
