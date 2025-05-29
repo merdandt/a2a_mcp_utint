@@ -1,5 +1,7 @@
 # Car Repair Shop Assistant: Agent2Agent and MCP Integration
 
+![Architecture Schema](assets/shema.png)
+
 ## Introduction
 
 In the fast-moving world of agentic AI, two open protocols quietly solve the headaches that used to keep multi-agent projects from ever leaving the lab.
